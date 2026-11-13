@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loopra — Download Official Android App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for 3D Interactive Particle Field & Sonic Core Visuals -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Lucide Icons for crisp vector UI -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#060608',
+                        cardBg: '#101015',
+                        accentGold: '#F59E0B',
+                        accentAmber: '#D97706',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-delayed': 'float 6s ease-in-out 3s infinite',
+                        'pulse-glow': 'pulseGlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shimmer': 'shimmer 2.5s linear infinite',
+                        'spin-slow': 'spin 18s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-14px)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: 0.4, transform: 'scale(1)' },
+                            '50%': { opacity: 0.8, transform: 'scale(1.05)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            overflow-x: hidden;
+            background-color: #060608;
+        }
+
+        /* 3D Canvas Background Layer */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Premium Glassmorphism */
+        .glass { 
+            background: rgba(16, 16, 22, 0.65); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+        }
+
+        .glass-card-hover {
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease, box-shadow 0.35s ease;
+        }
+
+        .glass-card-hover:hover {
+            transform: translateY(-6px);
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 25px 50px -12px rgba(245, 158, 11, 0.18);
+        }
+
+        /* Gold Glow & Shimmer Button */
+        .glow-gold { 
+            box-shadow: 0 0 60px -12px rgba(245, 158, 11, 0.35); 
+        }
+
+        .btn-shimmer {
+            background: linear-gradient(110deg, #F59E0B 0%, #EA580C 45%, #FDE68A 50%, #EA580C 55%, #F59E0B 100%);
+            background-size: 200% 100%;
+            animation: shimmer 3.5s infinite linear;
+        }
+
+        /* Scroll Reveal Animation */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Audio Equalizer Bars */
+        .eq-bar {
+            width: 3px;
+            background: #F59E0B;
+            border-radius: 999px;
+            animation: eqBounce 1s ease-in-out infinite alternate;
+        }
+        .eq-bar:nth-child(2) { animation-delay: 0.2s; }
+        .eq-bar:nth-child(3) { animation-delay: 0.4s; }
+        .eq-bar:nth-child(4) { animation-delay: 0.1s; }
+        @keyframes eqBounce {
+            0% { height: 4px; }
+            100% { height: 18px; }
+        }
+
+        /* Phone Mockup Frame */
+        .phone-frame {
+            box-shadow: 0 0 0 3px #1f1f26, 0 0 0 5px rgba(245, 158, 11, 0.22), 0 35px 80px -10px rgba(0,0,0,0.95), 0 0 55px -10px rgba(245, 158, 11, 0.25);
+        }
+
+        /* Vinyl Disc Rotation Control */
+        .disc-spinning {
+            animation: spin 14s linear infinite;
+            animation-play-state: running;
+        }
+        .disc-paused {
+            animation: spin 14s linear infinite;
+            animation-play-state: paused;
+        }
+
+        /* Equalizer Paused State */
+        .eq-paused .eq-bar {
+            animation-play-state: paused;
+            height: 4px !important;
+        }
+
+        /* Custom Tooltip on Hover */
+        .player-tooltip {
+            position: relative;
+        }
+        .player-tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 135%;
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: rgba(12, 12, 16, 0.96);
+            color: #FDE68A;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 1.3;
+            padding: 5px 9px;
+            border-radius: 8px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.85);
+            z-index: 50;
+        }
+        .player-tooltip:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col justify-between selection:bg-accentGold selection:text-black relative">
+
+    <!-- Interactive 3D Three.js Background Canvas -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Ambient Radial Glows -->
+    <div class="fixed top-[-10%] left-[-10%] w-[45vw] h-[45vw] rounded-full bg-amber-500/10 blur-[130px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-[-15%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-orange-600/10 blur-[130px] pointer-events-none z-0"></div>
+
+    <!-- Header / Navbar -->
+    <header class="w-full py-4 px-6 md:px-12 flex justify-between items-center border-b border-white/5 glass sticky top-0 z-50">
+        <div class="flex items-center space-x-3 group cursor-pointer">
+            <div class="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center font-extrabold text-black text-xl shadow-lg group-hover:scale-105 transition-transform">
+                <span>L</span>
+                <span class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-darkBg"></span>
+            </div>
+            <div class="flex flex-col">
+                <div class="flex items-center">
+                    <span class="text-xl font-extrabold tracking-tight">Loopra</span>
+                    <span class="text-accentGold text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 ml-2">Official APK</span>
+                </div>
+                <span class="text-[11px] text-zinc-400 hidden sm:inline">Stream Any Song, Anywhere</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <a href="#features" class="hidden md:inline-block text-sm font-medium text-zinc-400 hover:text-white transition">Features</a>
+            <a href="#comparison" class="hidden md:inline-block text-sm font-medium text-zinc-400 hover:text-white transition">Why APK?</a>
+            <a href="#install-guide" class="hidden md:inline-block text-sm font-medium text-zinc-400 hover:text-white transition">Install Guide</a>
+            <a href="#faq" class="hidden lg:inline-block text-sm font-medium text-zinc-400 hover:text-white transition">FAQ</a>
+            <a href="https://loopra1.vercel.app" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold text-zinc-200 hover:text-amber-400 transition flex items-center space-x-2">
+                <span>Web Player</span>
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Hero Section -->
+    <main class="relative z-10 flex-grow flex flex-col items-center justify-center px-6 py-12 md:py-20">
+        <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <!-- Left Column: Hero Copy & Download Card (7 cols) -->
+            <div class="lg:col-span-7 text-center lg:text-left space-y-8 reveal active">
+                
+                <!-- Live Status Badge -->
+                <div class="inline-flex items-center space-x-2.5 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-accentGold text-xs font-bold uppercase tracking-wider shadow-inner">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                    <span>Native Android Release • v2.0.4 Stable</span>
+                </div>
+
+                <!-- Headline & Subtitle -->
+                <div class="space-y-4">
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
+                        Experience Music Without Limits on 
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-500 to-orange-500">Loopra</span>
+                    </h1>
+                    <p class="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                        Uninterrupted background playback with screen off, draggable floating control bubbles, instant Picture-in-Picture video mode, and lossless Indian & global streaming.
+                    </p>
+                </div>
+
+                <!-- Interactive Download CTA Card -->
+                <div id="tilt-card" class="glass p-6 sm:p-8 rounded-3xl max-w-lg mx-auto lg:mx-0 glow-gold space-y-6 relative overflow-hidden transition-transform duration-200">
+                    <!-- Decorative Top Line -->
+                    <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-70"></div>
+
+                    <div class="flex items-center justify-between text-left border-b border-white/10 pb-4">
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-accentGold">
+                                <i data-lucide="smartphone" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-base sm:text-lg text-white">Loopra-Release-v2.apk</p>
+                                <p class="text-xs text-zinc-400 flex items-center space-x-2 mt-0.5">
+                                    <span>Android 7.0+</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-3 py-1 bg-zinc-800/90 border border-white/10 text-amber-400 text-xs font-bold rounded-lg block">5.4 MB</span>
+                            <span class="text-[10px] text-emerald-400 font-medium mt-1 block">✓ Verified</span>
+                        </div>
+                    </div>
+
+                    <!-- Primary Download Button -->
+                    <a id="download-btn" href="./app-release-signed.apk" download="app-release-signed.apk" class="btn-shimmer w-full py-4 px-6 text-black font-extrabold rounded-2xl shadow-xl transition transform hover:scale-[1.02] active:scale-95 flex items-center justify-center space-x-3 text-lg cursor-pointer">
+                        <i data-lucide="download" class="w-6 h-6 stroke-[2.5]"></i>
+                        <span id="download-btn-text">Download APK Now</span>
+                    </a>
+
+                    <!-- Simulated Download Progress Bar (Hidden until clicked) -->
+                    <div id="download-progress-container" class="hidden space-y-2">
+                        <div class="flex justify-between text-xs font-medium">
+                            <span class="text-amber-400" id="download-status">Preparing direct package...</span>
+                            <span class="text-zinc-400" id="download-percent">0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                            <div id="download-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-500 w-0 transition-all duration-200 rounded-full"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trust Badges -->
+                    <div class="flex flex-wrap items-center justify-center lg:justify-between gap-2 text-xs text-zinc-400 pt-1">
+                        <span class="flex items-center space-x-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i><span>100% Malware Free</span></span>
+                        <span class="flex items-center space-x-1.5"><i data-lucide="ban" class="w-4 h-4 text-amber-400"></i><span>Zero Audio Ads</span></span>
+                        <span class="flex items-center space-x-1.5"><i data-lucide="zap" class="w-4 h-4 text-amber-400"></i><span>Direct CDN</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: 3D Interactive Android App Preview Mockup (5 cols) -->
+            <div class="lg:col-span-5 flex justify-center items-center reveal active">
+                <div class="relative w-[290px] sm:w-[310px] animate-float">
+                    
+                    <!-- Floating Orbiting Pill Widget (Demonstrating Bubble Controls) -->
+                    <div class="absolute -left-8 sm:-left-12 top-16 z-30 glass px-4 py-2.5 rounded-full border border-amber-500/30 shadow-2xl flex items-center space-x-3 animate-float-delayed">
+                        <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 to-orange-600 flex items-center justify-center text-black font-bold text-xs">
+                            <i data-lucide="music" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div id="floating-eq" class="flex items-end space-x-0.5 h-4">
+                            <div class="eq-bar"></div>
+                            <div class="eq-bar"></div>
+                            <div class="eq-bar"></div>
+                            <div class="eq-bar"></div>
+                        </div>
+                        <span class="text-[10px] font-bold text-amber-300">Android Overlay</span>
+                    </div>
+
+                    <!-- Floating PiP Badge -->
+                    <div class="absolute -right-6 sm:-right-10 bottom-24 z-30 glass px-3.5 py-2 rounded-2xl border border-white/15 shadow-2xl flex items-center space-x-2 animate-float">
+                        <span id="bg-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="bg-status-text" class="text-xs font-bold text-white">Android Service Live</span>
+                    </div>
+
+                    <!-- Android Device Frame -->
+                    <div class="phone-frame bg-[#09090C] rounded-[2.6rem] p-2.5 border border-white/10 relative overflow-hidden">
+                        
+                        <!-- Android Screen Container -->
+                        <div class="bg-gradient-to-b from-[#181512] via-[#0E0E12] to-[#08080A] rounded-[2.1rem] overflow-hidden border border-white/5 flex flex-col">
+                            
+                            <!-- Authentic Android Status Bar with Punch-Hole Camera -->
+                            <div class="px-5 pt-2.5 pb-1.5 flex items-center justify-between text-[10px] font-semibold text-zinc-300 relative">
+                                <span id="android-status-time" class="tabular-nums">11:01</span>
+                                <!-- Android Center Punch-Hole Camera -->
+                                <div class="w-3.5 h-3.5 rounded-full bg-black border border-zinc-800 shadow-inner"></div>
+                                <div class="flex items-center space-x-1.5 text-zinc-300">
+                                    <span class="text-[9px] font-bold text-amber-400">5G</span>
+                                    <i data-lucide="wifi" class="w-3 h-3"></i>
+                                    <i data-lucide="battery-charging" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                </div>
+                            </div>
+
+                            <!-- Android App Content -->
+                            <div class="p-4 pt-2 space-y-4">
+                                <!-- Top Android App Bar -->
+                                <div class="flex justify-between items-center text-xs text-zinc-400">
+                                    <button type="button" class="player-tooltip p-1 text-zinc-400 cursor-default" data-tooltip="Minimize to Android Mini-Player (App Only)">
+                                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                    </button>
+                                    <div class="flex flex-col items-center">
+                                        <span class="uppercase tracking-widest text-[9px] font-extrabold text-amber-400">Loopra Android</span>
+                                        <span id="audio-live-label" class="text-[9px] text-zinc-400">Headlights • Auto-Playing</span>
+                                    </div>
+                                    <button type="button" class="player-tooltip p-1 text-zinc-400 cursor-default" data-tooltip="Audio Equalizer & Sleep Timer in APK">
+                                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Album Art with Vinyl Disc Spin -->
+                                <div class="relative aspect-square rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-600/20 to-zinc-900 border border-amber-500/25 flex items-center justify-center overflow-hidden shadow-inner">
+                                    <!-- Rotating Vinyl Record -->
+                                    <div id="vinyl-disc" class="disc-spinning w-36 h-36 rounded-full bg-gradient-to-tr from-zinc-950 via-zinc-800 to-zinc-900 border-4 border-amber-500/35 flex items-center justify-center shadow-2xl relative">
+                                        <!-- Vinyl Grooves -->
+                                        <div class="absolute inset-2 rounded-full border border-white/5"></div>
+                                        <div class="absolute inset-5 rounded-full border border-white/5"></div>
+                                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-black font-black text-sm shadow-md">
+                                            L
+                                        </div>
+                                    </div>
+                                    <div class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[9px] font-bold text-emerald-400 border border-emerald-500/25">
+                                        HI-FI AUDIO
+                                    </div>
+                                    <div class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[9px] font-bold text-amber-400 border border-amber-500/20">
+                                        320 KBPS
+                                    </div>
+                                </div>
+
+                                <!-- Track Details -->
+                                <div class="space-y-1 text-left">
+                                    <div class="flex justify-between items-center">
+                                        <h4 class="font-bold text-sm text-white truncate">Headlights</h4>
+                                        <button type="button" class="player-tooltip cursor-default" data-tooltip="Save to Offline Favorites (Android App)">
+                                            <i data-lucide="heart" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-[11px] text-zinc-400">Alok, Alan Walker & KIDDO</p>
+                                </div>
+
+                                <!-- Live Working Timer & Progress Bar -->
+                            <div class="space-y-1.5">
+                                <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                    <div id="player-progress-bar" class="w-0 h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-300"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-zinc-400 font-semibold tabular-nums">
+                                    <span id="player-current-time">0:00</span>
+                                    <span id="player-total-time">2:38</span>
+                                </div>
+                            </div>
+
+                            <!-- Local HTML5 Audio Player for Headlights.mp3 -->
+                            <audio id="local-audio-player" src="./Headlights.mp3" preload="auto" loop playsinline></audio>
+
+                            <!-- Android Playback Controls (Only Play/Pause Active, Others Visual with Hover Info) -->
+                                <div class="flex justify-between items-center pt-1 px-1">
+                                    <button type="button" class="player-tooltip p-1.5 text-zinc-500 cursor-default" data-tooltip="Smart Shuffle • Available in Full APK">
+                                        <i data-lucide="shuffle" class="w-4 h-4"></i>
+                                    </button>
+                                    <button type="button" class="player-tooltip p-1.5 text-zinc-400 hover:text-zinc-200 cursor-default" data-tooltip="Previous Track • Preview Demo Only">
+                                        <i data-lucide="skip-back" class="w-5 h-5"></i>
+                                    </button>
+                                    <button id="player-play-pause-btn" type="button" aria-label="Play or Pause Headlights" class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-black flex items-center justify-center shadow-lg shadow-amber-500/35 hover:scale-105 active:scale-95 transition cursor-pointer">
+                                        <i id="play-pause-icon" data-lucide="pause" class="w-5 h-5 fill-black"></i>
+                                    </button>
+                                    <button type="button" class="player-tooltip p-1.5 text-zinc-400 hover:text-zinc-200 cursor-default" data-tooltip="Next Track • Full Queue in Android App">
+                                        <i data-lucide="skip-forward" class="w-5 h-5"></i>
+                                    </button>
+                                    <button type="button" class="player-tooltip p-1.5 text-amber-400 cursor-default" data-tooltip="Floating Video PiP Mode • Android 8.0+">
+                                        <i data-lucide="picture-in-picture-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Android Bottom Gesture Navigation Bar -->
+                            <div class="pt-1 pb-2.5 flex justify-center items-center">
+                                <div class="w-24 h-1 rounded-full bg-zinc-600/80"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Bento Grid -->
+        <section id="features" class="max-w-6xl w-full pt-24 space-y-10 reveal">
+            <div class="text-center space-y-3">
+                <span class="text-xs font-bold uppercase tracking-widest text-amber-400">Engineered for Performance</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold">Built for True Audiophiles</h2>
+                <p class="text-sm text-zinc-400 max-w-2xl mx-auto">Every module inside Loopra Android is custom-built to deliver smooth multitasking, rich spatial acoustics, and effortless cross-device sync.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                <!-- Feature 1 -->
+                <div class="glass glass-card-hover p-7 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-accentGold">
+                        <i data-lucide="headphones" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white">True Background Play</h3>
+                    <p class="text-sm text-zinc-400 leading-relaxed">
+                        Native Android foreground service keeps your music streaming smoothly even when your phone screen is locked or you switch apps.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass glass-card-hover p-7 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-accentGold">
+                        <i data-lucide="disc" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white">Floating Bubble Controls</h3>
+                    <p class="text-sm text-zinc-400 leading-relaxed">
+                        Draggable floating control pill overlays any app so you can pause, skip, or scrub tracks without leaving your game or chat.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass glass-card-hover p-7 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-accentGold">
+                        <i data-lucide="picture-in-picture-2" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white">Instant Video & PiP Mode</h3>
+                    <p class="text-sm text-zinc-400 leading-relaxed">
+                        Switch seamlessly between pure audio and floating Picture-in-Picture video mode with zero buffering or audio stutter.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="glass glass-card-hover p-7 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-accentGold">
+                        <i data-lucide="sliders" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white">AfterHours 360° DSP Engine</h3>
+                    <p class="text-sm text-zinc-400 leading-relaxed">
+                        Built-in Bass Boost, 5-Band Custom Equalizer, Reverb presets, and Slowed + Reverb mode tailored for late-night listening.
+                    </p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="glass glass-card-hover p-7 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-accentGold">
+                        <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white">Cloud Playlist & Web Sync</h3>
+                    <p class="text-sm text-zinc-400 leading-relaxed">
+                        Sync your liked songs, history, and custom playlists effortlessly with the <span class="text-zinc-200 font-medium">Loopra Web Player</span> anytime.
+                    </p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="glass glass-card-hover p-7 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-accentGold">
+                        <i data-lucide="moon" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white">Smart Sleep Timer & Lock Controls</h3>
+                    <p class="text-sm text-zinc-400 leading-relaxed">
+                        Set an auto-fade sleep timer before bed and control playback directly from Android lockscreen media notifications & Bluetooth headsets.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Web Player vs Official Android APK Comparison -->
+        <section id="comparison" class="max-w-5xl w-full pt-20 space-y-8 reveal">
+            <div class="text-center space-y-2">
+                <span class="text-xs font-bold uppercase tracking-widest text-amber-400">Why Go Native?</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold">Web Player vs. Official Android APK</h2>
+            </div>
+
+            <div class="glass rounded-3xl overflow-hidden border border-white/10">
+                <div class="grid grid-cols-3 bg-white/[0.03] px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400 border-b border-white/10">
+                    <div>Capability</div>
+                    <div class="text-center">Web Player</div>
+                    <div class="text-center text-amber-400">Android APK v2.0</div>
+                </div>
+                <div class="divide-y divide-white/5 text-sm">
+                    <div class="grid grid-cols-3 px-6 py-4 items-center">
+                        <span class="font-medium text-zinc-200">Screen-Off Background Playback</span>
+                        <span class="text-center text-zinc-500 text-xs">Browser Limited</span>
+                        <span class="text-center text-emerald-400 font-bold text-xs">✓ Native Service</span>
+                    </div>
+                    <div class="grid grid-cols-3 px-6 py-4 items-center">
+                        <span class="font-medium text-zinc-200">Floating Control Bubble Overlay</span>
+                        <span class="text-center text-zinc-500 text-xs">✕ Not Supported</span>
+                        <span class="text-center text-emerald-400 font-bold text-xs">✓ Draggable Pill</span>
+                    </div>
+                    <div class="grid grid-cols-3 px-6 py-4 items-center">
+                        <span class="font-medium text-zinc-200">Picture-in-Picture (PiP) Video</span>
+                        <span class="text-center text-zinc-400 text-xs">Tab Only</span>
+                        <span class="text-center text-emerald-400 font-bold text-xs">✓ System-Wide PiP</span>
+                    </div>
+                    <div class="grid grid-cols-3 px-6 py-4 items-center">
+                        <span class="font-medium text-zinc-200">All YouTube Songs & Remixes</span>
+                        <span class="text-center text-emerald-400 font-bold text-xs">✓ Included</span>
+                        <span class="text-center text-emerald-400 font-bold text-xs">✓ Full Access</span>
+                    </div>
+                    <div class="grid grid-cols-3 px-6 py-4 items-center">
+                        <span class="font-medium text-zinc-200">Lock-Screen & Notification Controls</span>
+                        <span class="text-center text-zinc-500 text-xs">Basic</span>
+                        <span class="text-center text-emerald-400 font-bold text-xs">✓ Rich Media Style</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Installation Guide -->
+        <section id="install-guide" class="max-w-4xl w-full pt-20 pb-8 reveal">
+            <div class="glass p-8 sm:p-10 rounded-3xl text-left space-y-6 border border-white/10">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+                    <div>
+                        <h4 class="font-extrabold text-lg text-white flex items-center space-x-2">
+                            <i data-lucide="terminal" class="w-5 h-5 text-accentGold"></i>
+                            <span>Quick Installation Guide</span>
+                        </h4>
+                        <p class="text-xs text-zinc-400 mt-1">Takes less than 30 seconds to set up on any Android device</p>
+                    </div>
+                    <span class="text-xs font-semibold px-3 py-1 rounded-full bg-white/5 text-zinc-300 w-fit">Android 7.0 – 15</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="space-y-2">
+                        <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 font-bold text-sm flex items-center justify-center border border-amber-500/30">1</div>
+                        <h5 class="font-bold text-sm text-white">Download Package</h5>
+                        <p class="text-xs text-zinc-400 leading-relaxed">Tap the <span class="text-amber-400 font-semibold">Download APK Now</span> button above to save <code class="text-zinc-200">app-release-signed.apk</code> to your device.</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 font-bold text-sm flex items-center justify-center border border-amber-500/30">2</div>
+                        <h5 class="font-bold text-sm text-white">Allow & Install</h5>
+                        <p class="text-xs text-zinc-400 leading-relaxed">Open the downloaded file from your notification shade and enable <span class="text-white font-semibold">Install from Unknown Sources</span> if prompted.</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 font-bold text-sm flex items-center justify-center border border-amber-500/30">3</div>
+                        <h5 class="font-bold text-sm text-white">Stream Unlimited</h5>
+                        <p class="text-xs text-zinc-400 leading-relaxed">Launch Loopra, grant overlay permission for the floating bubble, and enjoy ad-free background music.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 w-full py-8 px-6 md:px-12 border-t border-white/5 glass mt-12">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-zinc-500">
+            <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <p>© 2026 Loopra / AfterHours. All rights reserved.</p>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="https://loopra1.vercel.app" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 transition">Web App</a>
+                <a href="#features" class="hover:text-amber-400 transition">Features</a>
+                <a href="#install-guide" class="hover:text-amber-400 transition">Installation</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive 3D Visuals, Ambient Surround Audio & UI Logic -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Live Android Status Bar Current Time Clock
+        const androidStatusTimeEl = document.getElementById('android-status-time');
+        function updateAndroidClock() {
+            if (!androidStatusTimeEl) return;
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+            androidStatusTimeEl.textContent = `${hours}:${formattedMinutes}`;
+        }
+        updateAndroidClock();
+        setInterval(updateAndroidClock, 1000);
+
+        // 0. Local Audio Player Engine (./Headlights.mp3) with Ambient 360° Surround Sound DSP
+        const audioPlayer = document.getElementById('local-audio-player');
+        const playPauseBtn = document.getElementById('player-play-pause-btn');
+        const vinylDisc = document.getElementById('vinyl-disc');
+        const floatingEq = document.getElementById('floating-eq');
+        const progressBar = document.getElementById('player-progress-bar');
+        const currentTimeEl = document.getElementById('player-current-time');
+        const totalTimeEl = document.getElementById('player-total-time');
+        const audioLiveLabel = document.getElementById('audio-live-label');
+        const bgStatusDot = document.getElementById('bg-status-dot');
+        const bgStatusText = document.getElementById('bg-status-text');
+
+        let isPlaying = false;
+        let surroundCtx = null;
+        let pannerNode = null;
+        let panAngle = 0;
+
+        // Initialize Web Audio API Ambient & 360° Surround Spatial Engine
+        function initSurroundAudioEngine() {
+            if (surroundCtx) {
+                if (surroundCtx.state === 'suspended') {
+                    surroundCtx.resume();
+                }
+                return;
+            }
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                surroundCtx = new AudioCtx();
+
+                const source = surroundCtx.createMediaElementSource(audioPlayer);
+
+                // 1. Warm Ambient Tone Shaping (Subtle low-end warmth & airy presence)
+                const lowWarmth = surroundCtx.createBiquadFilter();
+                lowWarmth.type = 'lowshelf';
+                lowWarmth.frequency.value = 180;
+                lowWarmth.gain.value = 3.5;
+
+                const ambientAir = surroundCtx.createBiquadFilter();
+                ambientAir.type = 'highshelf';
+                ambientAir.frequency.value = 6500;
+                ambientAir.gain.value = 2.0;
+
+                // 2. Smooth 360° Spatial Auto-Panner (8D Surround Orbit Effect)
+                pannerNode = surroundCtx.createStereoPanner();
+
+                // 3. Lush Ambient Hall Reverb (Impulse Response Convolver)
+                const convolver = surroundCtx.createConvolver();
+                const rate = surroundCtx.sampleRate;
+                const length = Math.floor(rate * 2.4); // 2.4s lush ambient tail
+                const impulse = surroundCtx.createBuffer(2, length, rate);
+                for (let ch = 0; ch < 2; ch++) {
+                    const data = impulse.getChannelData(ch);
+                    for (let i = 0; i < length; i++) {
+                        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.6);
+                    }
+                }
+                convolver.buffer = impulse;
+
+                const dryGain = surroundCtx.createGain();
+                dryGain.gain.value = 0.82;
+
+                const wetReverbGain = surroundCtx.createGain();
+                wetReverbGain.gain.value = 0.34; // Balanced spacious ambience
+
+                // Connect DSP Graph: Source -> EQ -> Dry + Reverb -> Spatial Panner -> Speakers
+                source.connect(lowWarmth);
+                lowWarmth.connect(ambientAir);
+
+                ambientAir.connect(dryGain);
+                ambientAir.connect(convolver);
+                convolver.connect(wetReverbGain);
+
+                dryGain.connect(pannerNode);
+                wetReverbGain.connect(pannerNode);
+                pannerNode.connect(surroundCtx.destination);
+
+                // Smoothly orbit sound left-to-right around the listener's head
+                function updateSurroundOrbit() {
+                    if (pannerNode && !audioPlayer.paused) {
+                        panAngle += 0.012;
+                        pannerNode.pan.setTargetAtTime(Math.sin(panAngle) * 0.65, surroundCtx.currentTime, 0.05);
+                    }
+                    requestAnimationFrame(updateSurroundOrbit);
+                }
+                updateSurroundOrbit();
+            } catch (err) {
+                console.warn('Surround DSP fallback to standard stereo:', err);
+            }
+        }
+
+        function formatTime(secs) {
+            if (!isFinite(secs) || isNaN(secs)) return '0:00';
+            const m = Math.floor(secs / 60);
+            const s = Math.floor(secs % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function updatePlayerUI(playing) {
+            isPlaying = playing;
+            if (playing) {
+                vinylDisc.classList.remove('disc-paused');
+                vinylDisc.classList.add('disc-spinning');
+                floatingEq.classList.remove('eq-paused');
+                playPauseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="black" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>';
+                audioLiveLabel.textContent = 'Headlights • 360° Ambient';
+                bgStatusDot.classList.replace('bg-zinc-500', 'bg-emerald-400');
+                bgStatusText.textContent = '360° Surround Active';
+            } else {
+                vinylDisc.classList.remove('disc-spinning');
+                vinylDisc.classList.add('disc-paused');
+                floatingEq.classList.add('eq-paused');
+                playPauseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="black" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polygon points="6 3 20 12 6 21 6 3"/></svg>';
+                audioLiveLabel.textContent = 'Headlights • Paused';
+                bgStatusDot.classList.replace('bg-emerald-400', 'bg-zinc-500');
+                bgStatusText.textContent = 'Playback Paused';
+            }
+        }
+
+        // Update total duration once Headlights.mp3 metadata loads
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            if (audioPlayer.duration && isFinite(audioPlayer.duration)) {
+                totalTimeEl.textContent = formatTime(audioPlayer.duration);
+            }
+        });
+
+        // Sync progress bar & timer with real Headlights.mp3 playback
+        audioPlayer.addEventListener('timeupdate', () => {
+            const current = audioPlayer.currentTime || 0;
+            const duration = (audioPlayer.duration && isFinite(audioPlayer.duration)) ? audioPlayer.duration : 158;
+            currentTimeEl.textContent = formatTime(current);
+            const pct = Math.min((current / duration) * 100, 100);
+            progressBar.style.width = `${pct}%`;
+        });
+
+        audioPlayer.addEventListener('play', () => updatePlayerUI(true));
+        audioPlayer.addEventListener('pause', () => updatePlayerUI(false));
+
+        async function startLocalAudio() {
+            try {
+                initSurroundAudioEngine();
+                if (surroundCtx && surroundCtx.state === 'suspended') {
+                    await surroundCtx.resume();
+                }
+                await audioPlayer.play();
+                updatePlayerUI(true);
+            } catch (e) {
+                // Browser blocked unmuted autoplay until first user gesture
+                updatePlayerUI(false);
+                audioLiveLabel.textContent = 'Tap anywhere for 360° Audio';
+            }
+        }
+
+        function pauseLocalAudio() {
+            audioPlayer.pause();
+            updatePlayerUI(false);
+        }
+
+        // Toggle Play/Pause ONLY on Play/Pause Button
+        playPauseBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!audioPlayer.paused) {
+                pauseLocalAudio();
+            } else {
+                await startLocalAudio();
+            }
+        });
+
+        // Attempt Auto-Play immediately on Website Open + Seamless Unlock on First Interaction
+        window.addEventListener('DOMContentLoaded', () => {
+            startLocalAudio();
+        });
+
+        const unlockAudioOnFirstGesture = async () => {
+            if (audioPlayer.paused) {
+                await startLocalAudio();
+            }
+            window.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
+            window.removeEventListener('keydown', unlockAudioOnFirstGesture);
+        };
+        window.addEventListener('pointerdown', unlockAudioOnFirstGesture);
+        window.addEventListener('keydown', unlockAudioOnFirstGesture);
+
+        // 1. Download Button Feedback & Progress Simulation
+        const downloadBtn = document.getElementById('download-btn');
+        const downloadBtnText = document.getElementById('download-btn-text');
+        const progressContainer = document.getElementById('download-progress-container');
+        const downloadBar = document.getElementById('download-bar');
+        const downloadPercent = document.getElementById('download-percent');
+        const downloadStatus = document.getElementById('download-status');
+
+        downloadBtn.addEventListener('click', () => {
+            progressContainer.classList.remove('hidden');
+            downloadBtnText.textContent = 'Downloading APK...';
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 18) + 8;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    downloadStatus.textContent = 'Download started! Check your browser downloads.';
+                    downloadStatus.classList.replace('text-amber-400', 'text-emerald-400');
+                    downloadBtnText.textContent = 'Download Again';
+                }
+                downloadBar.style.width = `${progress}%`;
+                downloadPercent.textContent = `${progress}%`;
+            }, 180);
+        });
+
+        // 2. Subtle 3D Mouse Tilt on Download Card
+        const tiltCard = document.getElementById('tilt-card');
+        if (tiltCard && window.matchMedia('(pointer: fine)').matches) {
+            tiltCard.addEventListener('mousemove', (e) => {
+                const rect = tiltCard.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -4;
+                const rotateY = ((x - centerX) / centerX) * 4;
+                tiltCard.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+
+            tiltCard.addEventListener('mouseleave', () => {
+                tiltCard.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+            });
+        }
+
+        // 3. Scroll Reveal Observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.12 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // 3.5 Interactive FAQ Accordion Logic
+        document.querySelectorAll('.faq-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const content = btn.nextElementSibling;
+                const icon = btn.querySelector('svg');
+                const isOpen = !content.classList.contains('hidden');
+
+                // Close other open FAQs
+                document.querySelectorAll('.faq-content').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.faq-toggle svg').forEach(svg => svg.style.transform = 'rotate(0deg)');
+
+                if (!isOpen) {
+                    content.classList.remove('hidden');
+                    if (icon) icon.style.transform = 'rotate(180deg)';
+                }
+            });
+        });
+
+        // 4. Three.js Interactive Cursor-Disturbed 3D Particle Field
+        window.addEventListener('load', () => {
+            try {
+                const canvas = document.getElementById('bg-canvas');
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.set(0, 7, 22);
+                camera.lookAt(0, -1, 0);
+
+                const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                // Create Soft Circular Particle Texture for Smooth Glow
+                const spriteCanvas = document.createElement('canvas');
+                spriteCanvas.width = 32;
+                spriteCanvas.height = 32;
+                const ctx = spriteCanvas.getContext('2d');
+                const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                grad.addColorStop(0.4, 'rgba(253, 230, 138, 0.8)');
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 32, 32);
+                const particleTexture = new THREE.CanvasTexture(spriteCanvas);
+
+                // Create 3D Golden Particle Soundwave Grid with Physics Displacement
+                const cols = 60;
+                const rows = 40;
+                const particleCount = cols * rows;
+                const geometry = new THREE.BufferGeometry();
+                
+                const positions = new Float32Array(particleCount * 3);
+                const basePositions = new Float32Array(particleCount * 3);
+                const velocities = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+
+                const colorAmber = new THREE.Color('#F59E0B');
+                const colorOrange = new THREE.Color('#EA580C');
+                const colorGoldHighlight = new THREE.Color('#FDE68A');
+
+                let idx = 0;
+                for (let ix = 0; ix < cols; ix++) {
+                    for (let iz = 0; iz < rows; iz++) {
+                        const x = (ix - cols / 2) * 0.85;
+                        const z = (iz - rows / 2) * 0.85;
+                        const y = -5.5;
+
+                        positions[idx * 3] = x;
+                        positions[idx * 3 + 1] = y;
+                        positions[idx * 3 + 2] = z;
+
+                        basePositions[idx * 3] = x;
+                        basePositions[idx * 3 + 1] = y;
+                        basePositions[idx * 3 + 2] = z;
+
+                        const mixedColor = colorAmber.clone().lerp(colorOrange, ix / cols);
+                        colors[idx * 3] = mixedColor.r;
+                        colors[idx * 3 + 1] = mixedColor.g;
+                        colors[idx * 3 + 2] = mixedColor.b;
+                        idx++;
+                    }
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                const particleMaterial = new THREE.PointsMaterial({
+                    size: 0.24,
+                    map: particleTexture,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.78,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const waveParticles = new THREE.Points(geometry, particleMaterial);
+                scene.add(waveParticles);
+
+                // Create Floating Ambient Stardust Particles that drift with cursor
+                const dustCount = 140;
+                const dustGeo = new THREE.BufferGeometry();
+                const dustPos = new Float32Array(dustCount * 3);
+                const dustBase = new Float32Array(dustCount * 3);
+                for (let d = 0; d < dustCount; d++) {
+                    const dx = (Math.random() - 0.5) * 42;
+                    const dy = (Math.random() - 0.5) * 22;
+                    const dz = (Math.random() - 0.5) * 26;
+                    dustPos[d * 3] = dx;
+                    dustPos[d * 3 + 1] = dy;
+                    dustPos[d * 3 + 2] = dz;
+                    dustBase[d * 3] = dx;
+                    dustBase[d * 3 + 1] = dy;
+                    dustBase[d * 3 + 2] = dz;
+                }
+                dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+                const dustMat = new THREE.PointsMaterial({
+                    size: 0.28,
+                    map: particleTexture,
+                    color: 0xFBBF24,
+                    transparent: true,
+                    opacity: 0.55,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending
+                });
+                const ambientDust = new THREE.Points(dustGeo, dustMat);
+                scene.add(ambientDust);
+
+                // Create Floating Wireframe 3D Torus Knot (Sonic Core)
+                const torusGeo = new THREE.TorusKnotGeometry(4.2, 1.1, 120, 16);
+                const torusMat = new THREE.MeshBasicMaterial({
+                    color: 0xF59E0B,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.08
+                });
+                const sonicCore = new THREE.Mesh(torusGeo, torusMat);
+                sonicCore.position.set(6, 2, -6);
+                scene.add(sonicCore);
+
+                // Raycaster & Virtual Plane to project 2D Cursor into 3D Particle Space
+                const raycaster = new THREE.Raycaster();
+                const mouseNDC = new THREE.Vector2(999, 999);
+                const interactionPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 5.5);
+                const cursorWorldPos = new THREE.Vector3(999, -5.5, 999);
+                const prevCursorWorldPos = new THREE.Vector3(999, -5.5, 999);
+                const cursorVelocity = new THREE.Vector3(0, 0, 0);
+
+                let mouseX = 0;
+                let mouseY = 0;
+                let isPointerActive = false;
+
+                function updatePointer(clientX, clientY) {
+                    mouseX = (clientX / window.innerWidth - 0.5) * 2;
+                    mouseY = (clientY / window.innerHeight - 0.5) * 2;
+                    mouseNDC.x = (clientX / window.innerWidth) * 2 - 1;
+                    mouseNDC.y = -(clientY / window.innerHeight) * 2 + 1;
+                    isPointerActive = true;
+                }
+
+                window.addEventListener('mousemove', (e) => updatePointer(e.clientX, e.clientY));
+                window.addEventListener('touchmove', (e) => {
+                    if (e.touches.length > 0) {
+                        updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                }, { passive: true });
+
+                window.addEventListener('mouseleave', () => {
+                    isPointerActive = false;
+                });
+
+                // Handle Resize
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+
+                // Animation Loop
+                let time = 0;
+                const tempColor = new THREE.Color();
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    time += 0.024;
+
+                    // Project cursor onto the 3D particle wave plane
+                    if (isPointerActive) {
+                        raycaster.setFromCamera(mouseNDC, camera);
+                        const hitPoint = new THREE.Vector3();
+                        if (raycaster.ray.intersectPlane(interactionPlane, hitPoint)) {
+                            if (prevCursorWorldPos.x !== 999) {
+                                cursorVelocity.subVectors(hitPoint, prevCursorWorldPos);
+                            }
+                            prevCursorWorldPos.copy(hitPoint);
+                            cursorWorldPos.lerp(hitPoint, 0.35);
+                        }
+                    } else {
+                        cursorVelocity.multiplyScalar(0.9);
+                    }
+
+                    // Update Wave Particles with Cursor Disturbance & Spring Physics
+                    const posAttr = waveParticles.geometry.attributes.position;
+                    const colAttr = waveParticles.geometry.attributes.color;
+                    const interactionRadius = 6.2;
+
+                    let i = 0;
+                    for (let ix = 0; ix < cols; ix++) {
+                        for (let iz = 0; iz < rows; iz++) {
+                            const i3 = i * 3;
+                            const bx = basePositions[i3];
+                            const bz = basePositions[i3 + 2];
+
+                            // Base harmonic audio wave height
+                            const targetWaveY = Math.sin((ix * 0.24) + time) * 1.05 + Math.cos((iz * 0.28) + time * 0.85) * 1.05 - 5.5;
+
+                            let px = posAttr.getX(i);
+                            let py = posAttr.getY(i);
+                            let pz = posAttr.getZ(i);
+
+                            // Distance from 3D cursor position
+                            const dx = px - cursorWorldPos.x;
+                            const dz = pz - cursorWorldPos.z;
+                            const dist = Math.sqrt(dx * dx + dz * dz);
+
+                            // Apply cursor repulsion, swirl & ripple disturbance
+                            if (isPointerActive && dist < interactionRadius) {
+                                const force = (1 - dist / interactionRadius);
+                                const smoothForce = force * force;
+                                const angle = Math.atan2(dz, dx);
+
+                                // Push particles outward + drag slightly with cursor velocity
+                                velocities[i3] += (Math.cos(angle) * smoothForce * 0.32) + (cursorVelocity.x * smoothForce * 0.18);
+                                velocities[i3 + 1] += Math.sin(force * Math.PI) * 0.38;
+                                velocities[i3 + 2] += (Math.sin(angle) * smoothForce * 0.32) + (cursorVelocity.z * smoothForce * 0.18);
+
+                                // Brighten particles near cursor to luminous gold
+                                tempColor.copy(colorAmber).lerp(colorGoldHighlight, smoothForce);
+                                colAttr.setXYZ(i, tempColor.r, tempColor.g, tempColor.b);
+                            } else {
+                                // Smoothly restore original amber-orange gradient
+                                const baseCol = colorAmber.clone().lerp(colorOrange, ix / cols);
+                                colAttr.setXYZ(i, baseCol.r, baseCol.g, baseCol.b);
+                            }
+
+                            // Spring force back to resting wave grid
+                            velocities[i3] += (bx - px) * 0.055;
+                            velocities[i3 + 1] += (targetWaveY - py) * 0.085;
+                            velocities[i3 + 2] += (bz - pz) * 0.055;
+
+                            // Damping for fluid motion
+                            velocities[i3] *= 0.84;
+                            velocities[i3 + 1] *= 0.82;
+                            velocities[i3 + 2] *= 0.84;
+
+                            posAttr.setXYZ(
+                                i,
+                                px + velocities[i3],
+                                py + velocities[i3 + 1],
+                                pz + velocities[i3 + 2]
+                            );
+                            i++;
+                        }
+                    }
+                    posAttr.needsUpdate = true;
+                    colAttr.needsUpdate = true;
+
+                    // Gently drift floating stardust particles with cursor movement
+                    const dustAttr = ambientDust.geometry.attributes.position;
+                    for (let d = 0; d < dustCount; d++) {
+                        const d3 = d * 3;
+                        const floatY = dustBase[d3 + 1] + Math.sin(time * 0.8 + d) * 0.6;
+                        const targetX = dustBase[d3] + mouseX * (1.8 + (d % 4) * 0.4);
+                        const targetZ = dustBase[d3 + 2] + mouseY * (1.5 + (d % 3) * 0.4);
+
+                        dustAttr.setXYZ(
+                            d,
+                            dustAttr.getX(d) + (targetX - dustAttr.getX(d)) * 0.04,
+                            dustAttr.getY(d) + (floatY - dustAttr.getY(d)) * 0.04,
+                            dustAttr.getZ(d) + (targetZ - dustAttr.getZ(d)) * 0.04
+                        );
+                    }
+                    dustAttr.needsUpdate = true;
+
+                    // Rotate 3D Sonic Core & react slightly to cursor
+                    sonicCore.rotation.x += 0.003 + mouseY * 0.002;
+                    sonicCore.rotation.y += 0.005 + mouseX * 0.002;
+
+                    // Smooth Camera Parallax
+                    camera.position.x += (mouseX * 2.2 - camera.position.x) * 0.05;
+                    camera.position.y += (-mouseY * 1.4 + 7 - camera.position.y) * 0.05;
+                    camera.lookAt(0, -1, 0);
+
+                    renderer.render(scene, camera);
+                }
+
+                animate();
+            } catch (err) {
+                console.warn('3D background fallback active:', err);
+            }
+        });
+    </script>
+</body>
+</html>
